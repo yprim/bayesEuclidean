@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Helpers\Algorithm;
+
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 
@@ -17,6 +18,7 @@ class NaiveBayes
   static protected $expiresAt;
   static protected $i;
   static protected $feature;
+  static protected $out;
 
   /**
    * Initializes some global variables and returns the category
@@ -37,8 +39,11 @@ class NaiveBayes
     self::$category = $category;
     self::$element = $element;
     self::$tableName = $tableName;
-    self::$expiresAt = now()->addYear(1);
-    
+    // self::$expiresAt = now()->addYear(1);
+    self::$expiresAt = 25;
+    self::$out = new \Symfony\Component\Console\Output\ConsoleOutput();
+
+
     NaiveBayes::loadCategotyData();
 
     return NaiveBayes::classify();
@@ -51,14 +56,15 @@ class NaiveBayes
    */
   public static function classify()
   {
+
     $instancesByCat = array();
     $featuresProbs = NaiveBayes::calculateProbs();
-    
+
     foreach (self::$categories as $cat) {
       $instancesByCat[$cat] = NaiveBayes::instances($cat);
     }
 
-    $m = count(self::$features)-1;
+    $m = count(self::$features) - 1;
     $totalProbsCategories = NaiveBayes::calcProbTotal($featuresProbs, $instancesByCat, $m);
 
     return array_keys($totalProbsCategories, max($totalProbsCategories))[0];
@@ -84,7 +90,7 @@ class NaiveBayes
       $productFreq = 1;
       $n = self::$instanceCategory[$key];
 
-      for ($i=0; $i < count($probs)-1; $i++) {
+      for ($i = 0; $i < count($probs) - 1; $i++) {
         $productFreq *= ($instances[$i] + $m * $probs[$i]) / ($n + $m);
       }
 
@@ -106,19 +112,25 @@ class NaiveBayes
   {
     $key = 'load_categoty_data_' . self::$tableName . '_' . self::$category;
 
+    if (Cache::has($key)) {
+      self::$out->writeln($key . ' En cache');
+    }
+
     $query = Cache::remember($key, self::$expiresAt, function () {
       return DB::table(self::$tableName)
-                  ->select(self::$category, DB::raw('count(*) as total'))
-                  ->groupBy(self::$category)
-                  ->pluck('total', self::$category)->all();
+        ->select(self::$category, DB::raw('count(*) as total'))
+        ->groupBy(self::$category)
+        ->pluck('total', self::$category)->all();
     });
 
     [$categories] = array_divide($query);
-    
+
     self::$instanceCategory = $query;
     self::$categories = $categories;
   }
 
+
+  // TODO: Pasar esto a Cache
   /**
    * Calculates the number of instances that match the value of the
    * feature indicated in a category.
@@ -131,19 +143,23 @@ class NaiveBayes
   {
     $instances = array();
 
-    for ($i=0; $i < count(self::$features)-1; $i++) {
-      
-      $key = 'instances_' . self::$tableName . '_' . last(self::$features) . 
-              '_' . self::$features[$i] . '_' . self::$element[$i] . '_' . $cat;
+    for ($i = 0; $i < count(self::$features) - 1; $i++) {
+
+      $key = 'instances_' . self::$tableName . '_' . last(self::$features) .
+        '_' . self::$features[$i] . '_' . self::$element[$i] . '_' . $cat;
       self::$cat = $cat;
       self::$i = $i;
-      
+
+      if (Cache::has($key)) {
+        self::$out->writeln($key . ' En cache');
+      }
+
       $instancesNumber = Cache::remember($key, self::$expiresAt, function () {
         return DB::table(self::$tableName)
-                    ->where([
-                      [self::$features[self::$i], self::$element[self::$i]],
-                      [last(self::$features), self::$cat],
-                    ])->get()->count();
+          ->where([
+            [self::$features[self::$i], self::$element[self::$i]],
+            [last(self::$features), self::$cat],
+          ])->get()->count();
       });
 
       array_push($instances, $instancesNumber);
@@ -161,20 +177,26 @@ class NaiveBayes
    */
   public static function priorProbability($category)
   {
-    $key = 'prior_probability_' . self::$tableName . '_' . self::$category . 
-            '_' . $category;
+    $key = 'prior_probability_' . self::$tableName . '_' . self::$category .
+      '_' . $category;
     self::$cat = $category;
+
+    if (Cache::has($key)) {
+      self::$out->writeln($key . ' En cache');
+    }
 
     return Cache::remember($key, self::$expiresAt, function () {
       $totalCategoryRecords = DB::table(self::$tableName)
-                                  ->where(self::$category, self::$cat)
-                                  ->count();
+        ->where(self::$category, self::$cat)
+        ->count();
       $totalRecords = DB::table(self::$tableName)->count();
 
       return $totalCategoryRecords / $totalRecords;
     });
   }
 
+
+  // TODO: Pasar esto a Cache
   /**
    * Calculate the probabilities of a value for each of the features.
    * Load the global features variable with the available features
@@ -187,17 +209,18 @@ class NaiveBayes
     $probs = array();
 
     foreach (self::$dataset->first() as $feature => $value) {
-      
+
       self::$feature = $feature;
       $key = 'calculate_probs_' . self::$tableName . '_' . $feature;
 
-      $occurrFeature = Cache::remember($key, self::$expiresAt, function () {
-        return DB::table(self::$tableName)
-                    ->select(self::$feature)
-                    ->distinct()
-                    ->get()->count();
-      });
+      if (Cache::has($key)) {
+        self::$out->writeln($key . ' En cache');
+      }
 
+      $occurrFeature = DB::table(self::$tableName)
+        ->select(self::$feature)
+        ->distinct()
+        ->get()->count();
       array_push(self::$features, $feature);
       array_push($probs, 1 / $occurrFeature);
     }

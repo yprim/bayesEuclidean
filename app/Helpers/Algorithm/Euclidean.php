@@ -17,6 +17,9 @@ class Euclidean
    *                       of the vectorX.
    * @return string $result Value of the closest point.
    */
+
+  
+
   public static function euclidean($vectorX, $vectorY)
   {
     $min = $result = 1000;
