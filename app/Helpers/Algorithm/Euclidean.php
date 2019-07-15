@@ -2,8 +2,6 @@
 
 namespace App\Helpers\Algorithm;
 
-use App\Helpers\StaticData;
-
 class Euclidean
 {
   /**
