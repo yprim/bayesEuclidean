@@ -44,7 +44,7 @@ class StaticData
       case 'ACOMODADOR':
         return 3;
       
-      case 'ASIMILADOR':
+      case 'ASIMILADOR': 
         return 4;
 
       default:

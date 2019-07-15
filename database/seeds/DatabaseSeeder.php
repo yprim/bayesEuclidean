@@ -21,7 +21,6 @@ class DatabaseSeeder extends Seeder
 
   private function estimateLikelihoods($tablename, $features, $classes, $classColumn)
   {
-    // Estimates and saves the likelihoods of the learning styles table
     // Foreach class
     foreach ($classes as $class) {
       // Estimates P(C) of $class
@@ -55,6 +54,9 @@ class DatabaseSeeder extends Seeder
               ->where($classColumn, $class)
               ->get()
           ) / $classInstances;
+
+          $f = is_numeric($f) ? round($f) : $f;  
+
           DB::table('likelihood')->insert(
             [
               'tablename' => $tablename,
