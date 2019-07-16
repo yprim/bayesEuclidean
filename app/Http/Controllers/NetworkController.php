@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Euclidean;
-use NaiveBayes;
 use App\Helpers\Algorithm\BayesClassifier;
 
 class NetworkController extends Controller
@@ -39,7 +38,6 @@ class NetworkController extends Controller
     $vectorX = [$reliability, $net_links, $capacity, $cost];
 
     if (strcmp($algorithm, "nbayes") == 0)
-      // return NaiveBayes::nBayes($networks, 'class', $vectorX, 'networks');
       return BayesClassifier::classify('networks', $vectorX, 'class');
     else
       return Euclidean::euclidean($vectorX, $networks);

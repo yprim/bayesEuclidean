@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Database\Seeder;
+use Illuminate\Database\QueryException;
 
 class DatabaseSeeder extends Seeder
 {
@@ -53,17 +54,20 @@ class DatabaseSeeder extends Seeder
               ->where($feature, $f)
               ->where($classColumn, $class)
               ->get()
-          ) / $classInstances;
-
-          $f = is_numeric($f) ? round($f) : $f;  
-
-          DB::table('likelihood')->insert(
-            [
-              'tablename' => $tablename,
-              'p_feature_class' => $f . '_' . $class,
-              'probability' => $p_f_c
-            ]
           );
+
+          $f = is_numeric($f) ? round($f) : $f;
+
+          try {
+            DB::table('likelihood')->insert(
+              [
+                'tablename' => $tablename,
+                'p_feature_class' => $f . '_' . $class,
+                'instances' => $p_f_c,
+                'probability' => 1 / count($feature_instances)
+              ]
+            );
+          } catch (QueryException $e)  {}
         }
       }
     }
@@ -72,7 +76,6 @@ class DatabaseSeeder extends Seeder
   private function seedLearningStylesProbs()
   {
     // Learning styles
-    // select distinct style from learning_styles;
     $features = ['ec', 'or', 'ca', 'ea'];
     $classes = [
       'ACOMODADOR',
@@ -85,8 +88,6 @@ class DatabaseSeeder extends Seeder
 
   private function seedCampusProbs()
   {
-    // Campus
-    // select distinct campus from students
     $features = ['average', 'gender', 'style'];
     $classes = ['Paraiso', 'Turrialba'];
     DatabaseSeeder::estimateLikelihoods('students', $features, $classes, 'campus');
@@ -94,8 +95,6 @@ class DatabaseSeeder extends Seeder
 
   private function seedGenderProbs()
   {
-    // Gender
-    // select distinct gender from students
     $features = ['style', 'campus', 'average'];
     $classes = ['M', 'F'];
     DatabaseSeeder::estimateLikelihoods('students', $features, $classes, 'gender');
@@ -103,8 +102,6 @@ class DatabaseSeeder extends Seeder
 
   private function seedTypeStudentProbs()
   {
-    // Student Type
-    // select distinct style from students
     $features = ['campus', 'gender', 'average'];
     $classes = [
       'ACOMODADOR',
@@ -117,8 +114,6 @@ class DatabaseSeeder extends Seeder
 
   private function seedTypeProfessorProbs()
   {
-    // Professor Type
-    // select distinct type from professors
     $features = ['age', 'gender', 'experience', 'course_times', 'discipline', 'skills_using_pc', 'skills_using_web_tech', 'skills_using_web_sites'];
     $classes = ['Beginner', 'Intermediate', 'Advanced'];
     DatabaseSeeder::estimateLikelihoods('professors', $features, $classes, 'type');
@@ -126,8 +121,6 @@ class DatabaseSeeder extends Seeder
 
   private function seedNetworkProbs()
   {
-    // Networks
-    // select distinct class from networks
     $features = ['reliability', 'net_links', 'capacity',  'cost'];
     $classes = ['A', 'B'];
     DatabaseSeeder::estimateLikelihoods('networks', $features, $classes, 'class');

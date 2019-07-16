@@ -16,8 +16,9 @@ class MakeLikelihoodTable extends Migration
     Schema::create('likelihood', function (Blueprint $table) {
       $table->increments('id');
       $table->string('tablename');
-      $table->string('p_feature_class');
+      $table->string('p_feature_class')->unique();
       $table->double('probability');
+      $table->integer('instances');
       $table->timestamps();
     });
   }

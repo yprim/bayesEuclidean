@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Euclidean;
-use NaiveBayes;
 use App\Helpers\Algorithm\BayesClassifier;
 
 class StudentController extends Controller
@@ -70,7 +69,6 @@ class StudentController extends Controller
     $vectorX = [$style, $campus, $average];
 
     if (strcmp($algorithm, "nbayes") == 0)
-    // $gender = NaiveBayes::nBayes($students, 'gender', $vectorX, 'students'); 
       $gender = BayesClassifier::classify('students', $vectorX, 'gender');
     else
        $gender = Euclidean::euclidean($vectorX, $students);

@@ -25,6 +25,5 @@ class AlgorithmServiceProvider extends ServiceProvider
     {
         require_once app_path() . '/Helpers/Algorithm/Euclidean.php';
         require_once app_path() . '/Helpers/Algorithm/BayesClassifier.php';
-        require_once app_path() . '/Helpers/Algorithm/NaiveBayes.php';
     }
 }
